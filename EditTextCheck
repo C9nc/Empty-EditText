@@ -1,0 +1,113 @@
+package android.elg0hary.quizme;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.elg0hary.quizme.databinding.ActivityLoginBinding;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+
+
+public class LoginActivity extends AppCompatActivity {
+    ActivityLoginBinding binding;
+    FirebaseAuth auth;
+    ProgressDialog dialog;
+    private EditText emailBoxEditText;
+    private EditText passwordBoxEditText;
+    private Button loginBtnCheck;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        emailBoxEditText = findViewById(R.id.emailBox);
+        passwordBoxEditText = findViewById(R.id.passBox);
+        loginBtnCheck = findViewById(R.id.loginBtn);
+        emailBoxEditText.addTextChangedListener(loginTextWatcher);
+        passwordBoxEditText.addTextChangedListener(loginTextWatcher);
+
+
+        binding = ActivityLoginBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        auth = FirebaseAuth.getInstance();
+
+        //Progressbar when Login
+        dialog = new ProgressDialog(this);
+        dialog.setMessage("Logging In...");
+
+
+        //To start directly app if u already Login before
+        if (auth.getCurrentUser() != null) {
+            startActivity(new Intent(LoginActivity.this, ChooseActivity.class));
+            finish();
+        }
+        
+        binding.loginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String email, pass;
+                email = binding.emailBox.getEditText().getText().toString();
+                pass = binding.passwordBox.getEditText().getText().toString();
+
+
+
+                dialog.show();
+                auth.signInWithEmailAndPassword(email, pass).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        dialog.dismiss();
+                      if (task.isSuccessful()){
+                          startActivity(new Intent(LoginActivity.this, ChooseActivity.class));
+                          finish();
+                      } else {
+                          Toast.makeText(LoginActivity.this, task.getException().getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                      }
+                    }
+                });
+            }
+        });
+
+        binding.createNewBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(LoginActivity.this, SignupActivity.class));
+                finish();
+            }
+        });
+
+    }
+
+   private TextWatcher loginTextWatcher = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            //trim to prevent empty space
+            String emailInput = emailBoxEditText.getText().toString().trim();
+            String passwordInput = passwordBoxEditText.getText().toString().trim();
+
+            loginBtnCheck.setEnabled(!emailInput.isEmpty() && !passwordInput.isEmpty());
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+
+        }
+    };
+}
